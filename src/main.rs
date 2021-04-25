@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::io;
 use std::io::Read;
 
@@ -26,11 +26,17 @@ fn main() -> Result<(), Error> {
 fn sum_of_groups(input: &[&str]) -> usize {
     return input
         .iter()
-        .map(|item| {
-            item.chars()
+        .map(|group| {
+            group
+                .chars()
                 .filter(|char| ('a'..='z').contains(char))
-                .collect::<HashSet<char>>()
-                .len()
+                .fold(HashMap::<char, usize>::new(), |mut map, char| {
+                    map.entry(char).and_modify(|x| *x += 1).or_insert(1);
+                    map
+                })
+                .iter()
+                .filter(|(_, count)| **count == group.lines().count())
+                .count()
         })
         .sum();
 }
@@ -46,11 +52,20 @@ mod tests {
 
     #[test]
     fn one_group() {
-        assert_eq!(3, sum_of_groups(&["abc"]));
-        assert_eq!(3, sum_of_groups(&["a\nb\nc"]));
+        assert_eq!(3, sum_of_groups(&["abc\nabc"]));
+        assert_eq!(0, sum_of_groups(&["a\nb\nc"]));
     }
+
     #[test]
     fn two_groups() {
-        assert_eq!(6, sum_of_groups(&["abz", "a\nb\nz"]));
+        assert_eq!(3, sum_of_groups(&["abz\nabz\nabz\nabz", "a\nb\nz"]));
+    }
+
+    #[test]
+    fn example_from_page() {
+        assert_eq!(
+            6,
+            sum_of_groups(&["abc", "a\nb\nc", "ab\nac", "a\na\na\na", "b"])
+        );
     }
 }
